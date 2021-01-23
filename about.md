@@ -3,13 +3,6 @@ layout: page
 title: About
 ---
 
-Some Markdown content describing your site.
+# Who am I?
 
-## About About Pages
-
-The About page is a common convention found on websites.
-It is your opportunity to let us know all the details "about" your project:
-
-- focus and topic area
-- people involved
-- code and projects used
+I'm a philosophy (PNP) PhD student at Washington University in St. Louis. My dissertation is on counterfactual histories of philosophy and argues that they are best understood as evaluating alternative scientific theories on the basis of evidence actual scientific theories have had to incorporate.
