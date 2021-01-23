@@ -1,0 +1,9 @@
+# Site settings
+title: Citations Needed
+author:
+  name: Dylan Doherty
+  email: dylancdoherty@protonmail.com
+description: "Getting a clear view without citations"
+
+# Build settings
+remote_theme: jekyll/minima
