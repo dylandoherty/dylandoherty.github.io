@@ -6,4 +6,4 @@ author:
 description: "Getting a clear view without citations"
 
 # Build settings
-remote_theme:     sharu725/krishna 
+remote_theme:     b2a3e8/jekyll-theme-console
