@@ -6,4 +6,5 @@ author:
 description: "Getting a clear view without citations"
 
 # Build settings
-theme: jekyll-theme-minimal
+
+remote_theme: jekyll/minima
