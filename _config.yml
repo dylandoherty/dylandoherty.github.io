@@ -6,4 +6,4 @@ author:
 description: "Getting a clear view without citations"
 
 # Build settings
-remote_theme:   daattali/beautiful-jekyll 
+remote_theme:    Hammie217/LatexJekyll 
