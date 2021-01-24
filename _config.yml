@@ -7,3 +7,5 @@ description: "Getting a clear view without citations"
 
 # Build settings
 remote_theme:  "mmistakes/minimal-mistakes@4.21.0"
+
+theme: jekyll-theme-minimal
