@@ -7,4 +7,4 @@ description: "Getting a clear view without citations"
 
 # Build settings
 
-remote_theme: jekyll/minima
+remote_theme: pmarsceill/just-the-docs
