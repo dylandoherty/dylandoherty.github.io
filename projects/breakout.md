@@ -4,7 +4,6 @@ title: Breakout
 parent: Projects
 nav_order: 2
 ---
-<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
