@@ -7,4 +7,4 @@ has_children: true
 
 This is where my various coding projects live.
 
-[Breakout](www.dylandoherty.github.io/_posts/breakout.html)
+[Breakout](https://www.dylandoherty.github.io/_posts/breakout.html)
