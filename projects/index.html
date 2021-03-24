@@ -7,6 +7,8 @@
 			<title>Dylan Doherty</title>
 			<!-- link to main stylesheet -->
 			<link rel="stylesheet" type="text/css" href="../css/main.css">
+			<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 			<!-- Global site tag (gtag.js) - Google Analytics -->
 			<script type="text/x-mathjax-config">
 			MathJax.Hub.Config({
@@ -19,9 +21,16 @@
 			<script src="../cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJaxdda6.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 		</head>
 		<body>
-			<div class="sidenav">
-				<a href="../index.html" class="button" style="color: white">Dylan Doherty</a>
-				<a href="../projects/index.html">Projects</a>
+			<div class="topnav">
+				<a href="../index.html" class="active">Dylan Doherty</a>
+				<!-- Navigation links (hidden by default) -->
+				<div id="myLinks">
+					<a href="projects/index.html">Projects</a>
+				</div>
+				<!-- "Hamburger menu" / "Bar icon" to toggle the navigation links -->
+				<a href="javascript:void(0);" class="icon" onclick="myFunction()">
+					<i class="fa fa-bars"></i>
+				</a>
 			</div>
 			<div class="container">
 
@@ -33,6 +42,16 @@
 
 			</footer>
 			</div><!-- /.container -->
+			<script>
+			function myFunction() {
+				var x = document.getElementById("myLinks");
+				if (x.style.display === "block") {
+					x.style.display = "none";
+				} else {
+					x.style.display = "block";
+				}
+			}
+			</script>
 		</body>
 
 </html>
