@@ -5,13 +5,10 @@ nav_order: 3
 ---
 
 # Contact
-1253 Maryland St
-
-Grosse Pointe Park, MI 48230
-
-(313) 516-1052
-
-dohertydylanc@gmail.com
+1253 Maryland St  
+Grosse Pointe Park, MI 48230  
+(313) 516-1052  
+dohertydylanc@gmail.com  
 
 # Areas of Specialization
 History and Philosophy of Science, Philosophy of History
