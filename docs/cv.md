@@ -16,6 +16,7 @@ Philosophy of Mind, Philosophy of Cognitive Science, Environmental Ethics
 - Expected Graduation Date: 2023
 - Dissertation Topic: Counterfactual History of Science
 - Dissertation Advisor: Dr. Anya Plutynski
+
 ### M.A., Philosophy-Neuroscience-Psychology, May 2017
 ## University of Nevada, Las Vegas - Las Vegas, NV
 ### B.A., Philosophy, Dec. 2013
@@ -28,6 +29,7 @@ American Philosophical Association (Pacific), 2017
 Central States Philosophical Association, 2015
 - The Explanatory Vices of the Hypothesis of Extended Memory and Belief
 Society for Exact Philosophy, 2014
+
 # Professional Experience
 ## Time Analyst – Charter County of Wayne, May 2022 – Present
 - Prepare, maintain, and review various important personnel records and reports.
@@ -35,6 +37,7 @@ Society for Exact Philosophy, 2014
 - Handle field contacts with employees to verify and give information concerning timekeeping and other personnel matters.
 - Prepare and verify payroll for submission.
 - Enter personnel records in the computer system via PeopleSoft
+
 ## Doctoral Candidate - Washington University in St. Louis, Aug. 2014 – Present
 - Conduct comprehensive research regarding current literature on the philosophy of biology and history.
 - Focus on assessing current understandings of Stephen Jay Gould’s work on historical contingency.
