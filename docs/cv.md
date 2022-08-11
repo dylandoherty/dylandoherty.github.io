@@ -46,14 +46,14 @@ Washington University in St. Louis, Aug. 2014 – Present
 - Create and maintain a Blackboard site in order to keep students up-to-date on all readings, assignments, and changes to the syllabus or deadlines.
 
 # Presentations
-Turning Points: The Role of Counterfactuals in Structuring Historical Narratives
-> American Philosophical Association (Central), 2019
+## Turning Points: The Role of Counterfactuals in Structuring Historical Narratives
+American Philosophical Association (Central), 2019
 
-Comments on Daniel Burnston’s “There is no Diachronic Cognitive Penetration”
-> American Philosophical Association (Pacific), 2017
+## Comments on Daniel Burnston’s “There is no Diachronic Cognitive Penetration”
+American Philosophical Association (Pacific), 2017
 
-Comments on T. Raja Rosenhagen’s “Seeing As and Seeing That”
-> Central States Philosophical Association, 2015
+## Comments on T. Raja Rosenhagen’s “Seeing As and Seeing That”
+Central States Philosophical Association, 2015
 
-The Explanatory Vices of the Hypothesis of Extended Memory and Belief
-> Society for Exact Philosophy, 2014
+## The Explanatory Vices of the Hypothesis of Extended Memory and Belief
+Society for Exact Philosophy, 2014
