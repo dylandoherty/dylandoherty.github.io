@@ -2,3 +2,4 @@ title: Dylan Doherty
 description: a simple site for a simple man
 remote_theme: just-the-docs/just-the-docs
 search_enabled: false
+logo: "logo.png"
