@@ -1,8 +1,7 @@
 ---
 layout: default
-title: This is a test of the chicken broadcasting system
+title: Links
+nav_order: 2
 ---
 
-# Testing 1 2 3
-
-Lol jk
+[Find me on LinkedIn](https://www.linkedin.com/in/dylancdoherty/)
