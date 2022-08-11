@@ -18,7 +18,7 @@ Washington University in St. Louis, Expected 2023
 Washington University in St. Louis, 2017
 
 ## B.A., Philosophy
-> University of Nevada, Las Vegas, 2013
+University of Nevada, Las Vegas, 2013
 
 # Professional Experience
 ## Time Analyst
