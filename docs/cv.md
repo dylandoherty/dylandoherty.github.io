@@ -11,18 +11,18 @@ History and Philosophy of Science, Philosophy of History
 # Areas of Competence
 Philosophy of Mind, Philosophy of Cognitive Science, Environmental Ethics
 # Education
-Ph.D., Philosophy-Neuroscience-Psychology
-> Washington University in St. Louis, Expected 2023
+## Ph.D., Philosophy-Neuroscience-Psychology
+Washington University in St. Louis, Expected 2023
 
-M.A., Philosophy-Neuroscience-Psychology
-> Washington University in St. Louis, 2017
+## M.A., Philosophy-Neuroscience-Psychology
+Washington University in St. Louis, 2017
 
-B.A., Philosophy
+## B.A., Philosophy
 > University of Nevada, Las Vegas, 2013
 
 # Professional Experience
 ## Time Analyst
-> Charter County of Wayne, May 2022 – Present
+Charter County of Wayne, May 2022 – Present
 
 - Prepare, maintain, and review various important personnel records and reports.
 - Data entry of all cost accounting information.
@@ -31,7 +31,7 @@ B.A., Philosophy
 - Enter personnel records in the computer system via PeopleSoft
 
 ## Doctoral Candidate
-> Washington University in St. Louis, Aug. 2014 – Present
+Washington University in St. Louis, Aug. 2014 – Present
 
 - Conduct comprehensive research regarding current literature on the philosophy of biology and history.
 - Focus on assessing current understandings of Stephen Jay Gould’s work on historical contingency.
