@@ -1,6 +1,0 @@
-title: Dylan Doherty
-description: a simple site for a simple man
-baseurl: "" 
-url: "http://dylandoherty.github.io" 
-remote_theme: pages-themes/minimal@v0.2.0
-search_enabled: false
