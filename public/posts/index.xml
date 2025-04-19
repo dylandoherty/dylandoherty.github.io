@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Dylan Doherty</title>
+    <link>http://localhost:1313/posts/</link>
+    <description>Recent content in Posts on Dylan Doherty</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Sat, 19 Apr 2025 10:13:59 -0400</lastBuildDate>
+    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>The (Accidental?) Firing of NINDS Researchers</title>
+      <link>http://localhost:1313/posts/ninds-firing/</link>
+      <pubDate>Sat, 19 Apr 2025 10:13:59 -0400</pubDate>
+      <guid>http://localhost:1313/posts/ninds-firing/</guid>
+      <description>&lt;p&gt;A fleeting numbness in my right arm led me to seek physical therapy. After my first appointment, I was provided with a potential cause: thoracic outlet syndrome. For someone already handling a baffling illness like multiple sclerosis this is a pure win. What started as the usual tantrum of sensations possibly signaling relapse turned out to be something much simpler. What initially was intermittent was shown, by simple pressure on my right shoulder, to be a perfectly understandable condition.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
