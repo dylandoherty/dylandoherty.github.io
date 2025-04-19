@@ -8,9 +8,9 @@ defaultcontentlanguage = "en"
 [pagination]
 pagerSize = 20
 
-[services]
-[services.disqus]
-shortname = "yourdiscussshortname"
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'
 
 [markup.highlight]
 style = "github-dark"
