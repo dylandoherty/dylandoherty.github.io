@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booklet Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --paper:#f4eddc;
+    --paper-deep:#ece1c9;
+    --ink:#221d16;
+    --ink-soft:#5b5141;
+    --rubric:#8a2326;
+    --rubric-deep:#6f1b1e;
+    --gold:#9c7a3c;
+    --rule:#cbbd9e;
+    --shadow:rgba(60,40,20,.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"EB Garamond",Georgia,serif;
+    color:var(--ink);
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(120% 80% at 50% -10%, #faf4e6 0%, rgba(250,244,230,0) 55%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>");
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:clamp(1.25rem,4vw,4rem) 1.25rem 4rem;
+    line-height:1.5;
+  }
+  .leaf{
+    width:100%;
+    max-width:46rem;
+    background:linear-gradient(180deg,#f7f0e0,#f1e8d3);
+    border:1px solid var(--rule);
+    box-shadow:0 1px 0 #fffaf0 inset, 0 18px 50px -22px var(--shadow);
+    padding:clamp(1.5rem,4vw,3rem);
+    position:relative;
+  }
+  /* double-rule border, like a printed missal page */
+  .leaf::before{
+    content:"";
+    position:absolute; inset:9px;
+    border:1px solid var(--rule);
+    pointer-events:none;
+  }
+  .inner{position:relative; z-index:1;}
+
+  header{text-align:center; margin-bottom:1.75rem;}
+  .fleuron{
+    color:var(--rubric);
+    font-family:"Cormorant Garamond",serif;
+    font-size:1.5rem;
+    letter-spacing:.4em;
+    margin:0 0 .35rem;
+    opacity:0; animation:rise .7s ease .05s forwards;
+  }
+  h1{
+    font-family:"Cormorant Garamond",serif;
+    font-weight:600;
+    font-size:clamp(2.4rem,7vw,3.4rem);
+    line-height:1.02;
+    margin:.1rem 0 .35rem;
+    letter-spacing:.01em;
+    opacity:0; animation:rise .7s ease .12s forwards;
+  }
+  h1 .amp{color:var(--rubric); font-style:italic; font-weight:500;}
+  .subtitle{
+    font-style:italic;
+    color:var(--ink-soft);
+    font-size:1.08rem;
+    margin:0 auto;
+    max-width:30rem;
+    opacity:0; animation:rise .7s ease .2s forwards;
+  }
+  .ornrule{
+    display:flex; align-items:center; justify-content:center; gap:.9rem;
+    margin:1.4rem auto .2rem; color:var(--gold);
+    opacity:0; animation:rise .7s ease .26s forwards;
+  }
+  .ornrule::before,.ornrule::after{
+    content:""; height:1px; width:5.5rem;
+    background:linear-gradient(90deg,transparent,var(--rule),transparent);
+  }
+
+  /* drop zone */
+  .drop{
+    margin-top:1.6rem;
+    border:1.5px dashed #b9a577;
+    background:rgba(255,251,240,.5);
+    padding:clamp(2rem,6vw,3.25rem) 1.5rem;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease;
+    opacity:0; animation:rise .7s ease .32s forwards;
+    outline:none;
+  }
+  .drop:hover,.drop:focus-visible{border-color:var(--rubric); background:rgba(255,251,240,.85);}
+  .drop.drag{
+    border-color:var(--rubric);
+    background:rgba(138,35,38,.07);
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px -20px var(--shadow);
+  }
+  .drop .mark{
+    font-family:"Cormorant Garamond",serif;
+    font-size:2.6rem; color:var(--rubric); line-height:1; display:block; margin-bottom:.5rem;
+  }
+  .drop .big{font-size:1.35rem; font-family:"Cormorant Garamond",serif; font-weight:600;}
+  .drop .small{color:var(--ink-soft); font-size:.98rem; margin-top:.35rem;}
+  .drop .small b{color:var(--rubric); font-weight:600; font-style:italic;}
+
+  .status{
+    margin-top:1.1rem; min-height:1.4rem; text-align:center;
+    font-style:italic; color:var(--ink-soft); font-size:1rem;
+  }
+  .status.err{color:var(--rubric-deep); font-style:normal;}
+
+  /* result */
+  .result{display:none; margin-top:1.4rem;}
+  .result.show{display:block; animation:rise .5s ease both;}
+  .filerow{
+    display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between;
+    gap:.5rem 1rem; margin-bottom:.85rem;
+  }
+  .filename{font-family:"Cormorant Garamond",serif; font-size:1.3rem; font-weight:600;}
+  .filename small{color:var(--ink-soft); font-weight:400; font-style:italic; font-size:.95rem;}
+  .actions{display:flex; gap:.6rem; flex-wrap:wrap;}
+  .btn{
+    font-family:"EB Garamond",serif; font-size:1rem;
+    border:1px solid var(--rubric); color:#fbf3e2; background:var(--rubric);
+    padding:.5rem 1.05rem; cursor:pointer; text-decoration:none;
+    transition:background .15s ease, transform .12s ease; display:inline-block;
+  }
+  .btn:hover{background:var(--rubric-deep); transform:translateY(-1px);}
+  .btn.ghost{background:transparent; color:var(--rubric);}
+  .btn.ghost:hover{background:rgba(138,35,38,.08);}
+  .preview{
+    width:100%; height:60vh; min-height:22rem;
+    border:1px solid var(--rule); background:#fff;
+  }
+
+  /* rubric-styled folding instructions */
+  details.rubric{
+    margin-top:1.7rem; border-top:1px solid var(--rule); padding-top:1.1rem;
+    opacity:0; animation:rise .7s ease .4s forwards;
+  }
+  details.rubric summary{
+    cursor:pointer; list-style:none; color:var(--rubric);
+    font-variant:small-caps; letter-spacing:.08em; font-size:1.05rem;
+  }
+  details.rubric summary::-webkit-details-marker{display:none;}
+  details.rubric summary::before{content:"\271D\00a0\00a0"; color:var(--gold);}
+  details.rubric[open] summary{margin-bottom:.6rem;}
+  ol.steps{margin:.2rem 0 .2rem; padding-left:1.4rem; color:var(--ink-soft);}
+  ol.steps li{margin:.3rem 0; font-style:italic;}
+  ol.steps li b{color:var(--ink); font-style:normal;}
+
+  footer{
+    text-align:center; margin-top:1.6rem; color:var(--ink-soft);
+    font-size:.9rem; font-style:italic;
+  }
+  footer a{color:var(--rubric);}
+
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;}}
+</style>
+</head>
+<body>
+<main class="leaf">
+  <div class="inner">
+    <header>
+      <p class="fleuron">&#10086;</p>
+      <h1>Booklet Maker</h1>
+      <p class="subtitle">Set a Markdown file into a printable eight-page folded booklet &mdash; entirely in your browser.</p>
+      <div class="ornrule"><span>&#10087;</span></div>
+    </header>
+
+    <div id="drop" class="drop" tabindex="0" role="button"
+         aria-label="Drop a Markdown file here, or press Enter to choose a file">
+      <span class="mark" aria-hidden="true">&#9753;</span>
+      <span class="big">Drop your Markdown here</span>
+      <span class="small">or <b>click to choose a file</b> &middot; .md, .markdown, or .txt</span>
+    </div>
+    <input id="file" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="result" class="result" aria-live="polite">
+      <div class="filerow">
+        <div class="filename" id="outname">booklet.pdf <small>&mdash; ready</small></div>
+        <div class="actions">
+          <a id="download" class="btn" download>Download</a>
+          <button id="reset" class="btn ghost" type="button">Make another</button>
+        </div>
+      </div>
+      <iframe id="preview" class="preview" title="Booklet preview"></iframe>
+    </section>
+
+    <details class="rubric">
+      <summary>How to fold the printed sheet</summary>
+      <ol class="steps">
+        <li><b>Print single-sided</b> on US Letter.</li>
+        <li>Fold in half <b>lengthwise</b> (hotdog fold), guide-lines facing out.</li>
+        <li>Fold in half again (<b>hamburger</b> fold) &mdash; now in quarters.</li>
+        <li>Fold once more &mdash; now in eighths.</li>
+        <li>Unfold back to the lengthwise fold.</li>
+        <li><b>Cut</b> the centre crease only, between the two middle rows.</li>
+        <li>Refold and press the ends together to form the booklet.</li>
+      </ol>
+    </details>
+
+    <footer>
+      Nothing is uploaded &mdash; your text never leaves this page.
+    </footer>
+  </div>
+</main>
+
+<!-- ===== booklet generation core (inlined; framework-free) ===== -->
+<script>
+(function (root) {
+  'use strict';
+  var SHEET_W = 612, SHEET_H = 792;
+  var PANEL_W = SHEET_W / 2, PANEL_H = SHEET_H / 4, MARGIN = 10;
+  var LAYOUT = [
+    [8,0,0,-90],[1,1,0,-90],[2,2,0,-90],[3,3,0,-90],
+    [7,0,1,90],[6,1,1,90],[5,2,1,90],[4,3,1,90]
+  ];
+
+  function parseMarkdown(text) {
+    var paragraphs = [], lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/\s+$/, '');
+      if (!line) { paragraphs.push({ type:'blank', text:'', level:0 }); continue; }
+      var m = line.match(/^(#{1,6})\s+(.*)/);
+      if (m) { paragraphs.push({ type:'heading', text:m[2], level:m[1].length }); continue; }
+      m = line.match(/^[-*+]\s+(.*)/);
+      if (m) { paragraphs.push({ type:'bullet', text:m[1], level:1 }); continue; }
+      paragraphs.push({ type:'body', text:line, level:0 });
+    }
+    return paragraphs;
+  }
+
+  function parseInline(text) {
+    var runs = [], i = 0, n = text.length, bold = false, italic = false, buf = '';
+    function flush(){ if (buf){ runs.push([buf,bold,italic]); buf=''; } }
+    while (i < n) {
+      if (text[i] === '*' && text[i+1] === '*') { flush(); bold = !bold; i += 2; }
+      else if (text[i] === '*') { flush(); italic = !italic; i += 1; }
+      else { buf += text[i]; i += 1; }
+    }
+    flush();
+    return runs;
+  }
+
+  function runsToWords(runs) {
+    var words = [], current = [];
+    for (var r = 0; r < runs.length; r++) {
+      var text = runs[r][0], b = runs[r][1], it = runs[r][2];
+      var parts = text.split(/(\s+)/);
+      for (var p = 0; p < parts.length; p++) {
+        var part = parts[p];
+        if (part === '') continue;
+        if (/^\s+$/.test(part)) { if (current.length){ words.push(current); current = []; } }
+        else current.push([part, b, it]);
+      }
+    }
+    if (current.length) words.push(current);
+    return words;
+  }
+
+  function fontKey(kind, bold, italic) {
+    var isBold = bold || (kind === 'heading');
+    if (isBold && italic) return 'bolditalic';
+    if (isBold) return 'bold';
+    if (italic) return 'italic';
+    return 'body';
+  }
+
+  function drawPanel(page, fonts, paras, row, col, rotation, lib) {
+    if (!paras || paras.length === 0) return;
+    var rgb = lib.rgb, degrees = lib.degrees;
+    var panel_x = col * PANEL_W, panel_y = SHEET_H - (row + 1) * PANEL_H;
+    var cx = panel_x + PANEL_W / 2, cy = panel_y + PANEL_H / 2;
+    var draw_w = PANEL_H - 2 * MARGIN, draw_h = PANEL_W - 2 * MARGIN;
+
+    var MIN_FONT = 4, MAX_FONT = Math.min(draw_w, draw_h) * 0.10;
+    MAX_FONT = Math.max(6, Math.min(MAX_FONT, 11));
+
+    function gapFor(s){ return s * 0.35; }
+    function sizeForKind(kind, level, base){ return kind === 'heading' ? base + Math.max(0,(4-level))*2 : base; }
+    function width(t, key, size){ return fonts[key].widthOfTextAtSize(t, size); }
+
+    function wrapWords(words, fontSize, maxWidth, kind) {
+      var space_w = width(' ', 'body', fontSize), lines = [], line = [], lw = 0;
+      for (var w = 0; w < words.length; w++) {
+        var frags = words[w].map(function (f){ return [f[0], fontKey(kind, f[1], f[2])]; });
+        var wordW = frags.reduce(function (a, f){ return a + width(f[0], f[1], fontSize); }, 0);
+        if (line.length && (lw + space_w + wordW) > maxWidth) { lines.push(line); line = frags.slice(); lw = wordW; }
+        else { if (line.length){ line.push([' ', 'body']); lw += space_w; } line = line.concat(frags); lw += wordW; }
+      }
+      if (line.length) lines.push(line);
+      if (!lines.length) lines.push([['', 'body']]);
+      return lines;
+    }
+
+    function buildRenderLines(base) {
+      var result = [];
+      for (var i = 0; i < paras.length; i++) {
+        var para = paras[i], kind = para.type;
+        if (kind === 'blank') { result.push([kind, base*0.5, [['', 'body']], 0]); continue; }
+        var sz = sizeForKind(kind, para.level || 0, base);
+        var words = runsToWords(parseInline(para.text));
+        if (kind === 'bullet') words = [[['\u2022', false, false]]].concat(words);
+        var indent = kind === 'bullet' ? base*0.8 : 0, availW = draw_w - indent;
+        var wrapped = wrapWords(words, sz, availW, kind);
+        for (var j = 0; j < wrapped.length; j++) result.push([kind, sz, wrapped[j], indent]);
+      }
+      return result;
+    }
+
+    function linesHeight(lines, gap){ return lines.reduce(function (a, ln){ return a + ln[1] + gap; }, 0); }
+    function fits(size){ var lines = buildRenderLines(size); return [linesHeight(lines, gapFor(size)) <= draw_h, lines]; }
+
+    var chosen, renderLines, res = fits(MAX_FONT);
+    if (res[0]) { chosen = MAX_FONT; renderLines = res[1]; }
+    else {
+      var lo = MIN_FONT, hi = MAX_FONT; chosen = MIN_FONT; renderLines = fits(MIN_FONT)[1];
+      for (var k = 0; k < 24; k++) {
+        var mid = (lo + hi) / 2, mres = fits(mid);
+        if (mres[0]) { chosen = mid; renderLines = mres[1]; lo = mid; } else hi = mid;
+      }
+    }
+    var line_gap = gapFor(chosen);
+
+    var theta = rotation * Math.PI / 180, cosT = Math.cos(theta), sinT = Math.sin(theta);
+    var y = draw_h / 2, x_left = -draw_w / 2;
+    for (var li = 0; li < renderLines.length; li++) {
+      var sz2 = renderLines[li][1], frags2 = renderLines[li][2], indent2 = renderLines[li][3];
+      y -= sz2;
+      if (y < -draw_h / 2) break;
+      var x = x_left + indent2;
+      for (var fi = 0; fi < frags2.length; fi++) {
+        var text = frags2[fi][0], key = frags2[fi][1];
+        if (text) {
+          var absX = cx + x*cosT - y*sinT, absY = cy + x*sinT + y*cosT;
+          page.drawText(text, { x:absX, y:absY, size:sz2, font:fonts[key], color:rgb(0,0,0), rotate:degrees(rotation) });
+          x += width(text, key, sz2);
+        }
+      }
+      y -= line_gap;
+    }
+  }
+
+  function drawGuides(page, lib) {
+    var opts = { thickness:0.5, color:lib.rgb(0.75,0.75,0.75), dashArray:[3,3] };
+    page.drawLine(Object.assign({ start:{x:SHEET_W/2,y:0}, end:{x:SHEET_W/2,y:SHEET_H} }, opts));
+    for (var r = 1; r < 4; r++) { var yy = r * PANEL_H; page.drawLine(Object.assign({ start:{x:0,y:yy}, end:{x:SHEET_W,y:yy} }, opts)); }
+  }
+
+  async function makeBookletPdf(PDFLib, markdownText) {
+    var PDFDocument = PDFLib.PDFDocument, StandardFonts = PDFLib.StandardFonts;
+    var doc = await PDFDocument.create();
+    var fonts = {
+      body: await doc.embedFont(StandardFonts.Helvetica),
+      bold: await doc.embedFont(StandardFonts.HelveticaBold),
+      italic: await doc.embedFont(StandardFonts.HelveticaOblique),
+      bolditalic: await doc.embedFont(StandardFonts.HelveticaBoldOblique)
+    };
+    var page = doc.addPage([SHEET_W, SHEET_H]);
+    var raw = String(markdownText).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    var rawPages = raw.split(/\n---\n/);
+    while (rawPages.length < 8) rawPages.push('');
+    var parsedPages = rawPages.slice(0, 8).map(function (p){ return parseMarkdown(p.trim()); });
+    drawGuides(page, PDFLib);
+    for (var i = 0; i < LAYOUT.length; i++) {
+      var pn = LAYOUT[i][0], row = LAYOUT[i][1], col = LAYOUT[i][2], rot = LAYOUT[i][3];
+      drawPanel(page, fonts, parsedPages[pn-1], row, col, rot, PDFLib);
+    }
+    return await doc.save();
+  }
+
+  root.BookletCore = { makeBookletPdf: makeBookletPdf };
+})(window);
+</script>
+
+<!-- ===== UI wiring ===== -->
+<script>
+(function () {
+  var drop = document.getElementById('drop');
+  var fileInput = document.getElementById('file');
+  var statusEl = document.getElementById('status');
+  var result = document.getElementById('result');
+  var preview = document.getElementById('preview');
+  var download = document.getElementById('download');
+  var outname = document.getElementById('outname');
+  var resetBtn = document.getElementById('reset');
+  var currentUrl = null;
+
+  function setStatus(msg, isErr) {
+    statusEl.textContent = msg || '';
+    statusEl.className = 'status' + (isErr ? ' err' : '');
+  }
+
+  function revoke() { if (currentUrl) { URL.revokeObjectURL(currentUrl); currentUrl = null; } }
+
+  function outNameFor(name) {
+    if (!name) return 'booklet.pdf';
+    return name.replace(/\.(md|markdown|txt)$/i, '') + '.pdf';
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    if (!/\.(md|markdown|txt)$/i.test(file.name) && file.type && !/text|markdown/.test(file.type)) {
+      setStatus('Please choose a .md, .markdown, or .txt file.', true);
+      return;
+    }
+    setStatus('Setting the type\u2026');
+    var text;
+    try { text = await file.text(); }
+    catch (e) { setStatus('Could not read that file.', true); return; }
+
+    try {
+      var bytes = await window.BookletCore.makeBookletPdf(window.PDFLib, text);
+      revoke();
+      var blob = new Blob([bytes], { type: 'application/pdf' });
+      currentUrl = URL.createObjectURL(blob);
+      var pdfName = outNameFor(file.name);
+      preview.src = currentUrl;
+      download.href = currentUrl;
+      download.setAttribute('download', pdfName);
+      outname.innerHTML = pdfName + ' <small>&mdash; ready to print</small>';
+      result.classList.add('show');
+      setStatus('');
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {
+      var msg = (e && e.message) ? e.message : String(e);
+      if (/WinAnsi|cannot encode|0x/i.test(msg)) {
+        setStatus('That text contains a character the built-in fonts can\u2019t print. Try replacing unusual symbols (e.g. Greek letters or special glyphs).', true);
+      } else {
+        setStatus('Something went wrong building the PDF: ' + msg, true);
+      }
+    }
+  }
+
+  // click + keyboard
+  drop.addEventListener('click', function () { fileInput.click(); });
+  drop.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+
+  // drag + drop
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.add('drag'); });
+  });
+  ['dragleave', 'dragend', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove('drag'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    var dt = e.dataTransfer;
+    if (dt && dt.files && dt.files[0]) handleFile(dt.files[0]);
+  });
+  // prevent the browser from opening a file dropped outside the zone
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); });
+
+  resetBtn.addEventListener('click', function () {
+    result.classList.remove('show');
+    preview.src = 'about:blank';
+    revoke();
+    setStatus('');
+    drop.focus();
+  });
+})();
+</script>
+</body>
+</html>
