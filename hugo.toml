@@ -68,4 +68,4 @@ style = "github-dark"
 [[menu.main]]
   name = "Booklet"
   weight = 2
-  url = "static/booklet.html"
+  url = "/booklet/"
