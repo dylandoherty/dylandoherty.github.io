@@ -113,7 +113,8 @@
         <code>\V</code> &rarr; red <span class="ex">&#8483;.</span> (versicle) &middot;&nbsp; <code>\R</code> &rarr; red <span class="ex">&#8479;.</span> (response)<br>
         <code>\+</code> &rarr; red &#10013; (cross) &middot;&nbsp; <code>\*</code> &rarr; red &lowast; (repeat / choir mark)<br>
         <code>**bold**</code> &middot;&nbsp; <code>*italic*</code> &middot;&nbsp; <code># Heading</code> &middot;&nbsp; <code>---</code> on its own line starts a new page (every 8 makes another foldable sheet).<br>
-        <code>***</code> on its own line draws a red ornamental divider &mdash; a flourish to separate or group sections within a page.
+        <code>***</code> on its own line draws a red ornamental divider &mdash; a flourish to separate or group sections within a page.<br>
+        A Markdown <b>table</b> renders as borderless columns (the blank header row is ignored) &mdash; good for fitting short entries, like a reading plan, two or three across.
       </p>
     </details>
 
@@ -174,6 +175,18 @@
     'M -20 -2.4 L -22.4 0 L -20 2.4 L -17.6 0 Z'
   ].join(' ');
 
+  function splitRow(line){
+    var s = line.trim();
+    if (s.charAt(0) === '|') s = s.slice(1);
+    if (s.charAt(s.length - 1) === '|') s = s.slice(0, -1);
+    return s.split('|').map(function (c){ return c.trim(); });
+  }
+  function isDelimRow(line){
+    if (!line || line.indexOf('|') < 0) return false;
+    var cells = splitRow(line);
+    return cells.length > 0 && cells.every(function (c){ return /^:?-{1,}:?$/.test(c); });
+  }
+
   function parseMarkdown(text) {
     var paragraphs = [], lines = text.split('\n');
     for (var i = 0; i < lines.length; i++) {
@@ -182,6 +195,18 @@
       var m = line.match(/^(#{1,6})\s+(.*)/);
       if (m) { paragraphs.push({ type:'heading', text:m[2], level:m[1].length }); continue; }
       if (/^(?:\*\s*){3,}$/.test(line) || /^~{3,}$/.test(line)) { paragraphs.push({ type:'ornament', text:'', level:0 }); continue; }
+      // table: a pipe row immediately followed by a delimiter row. The first
+      // (header) row is ignored; remaining rows become borderless columns.
+      if (line.indexOf('|') >= 0 && i + 1 < lines.length && isDelimRow(lines[i + 1])) {
+        var cols = splitRow(lines[i + 1]).length;
+        var trows = [];
+        var j = i + 2;
+        while (j < lines.length && lines[j].indexOf('|') >= 0 && lines[j].trim() !== '') {
+          trows.push(splitRow(lines[j])); j++;
+        }
+        paragraphs.push({ type:'table', cols:cols, rows:trows });
+        i = j - 1; continue;
+      }
       m = line.match(/^[-*+]\s+(.*)/);
       if (m) { paragraphs.push({ type:'bullet', text:m[1], level:1 }); continue; }
       // drop cap: a paragraph beginning with @X
@@ -277,6 +302,26 @@
       return lines;
     }
 
+    // lay a markdown table out as borderless columns at a given font size
+    function layoutTable(tbl, base) {
+      var n = Math.max(1, tbl.cols), gutter = base * 1.4;
+      var colW = (draw_w - (n - 1) * gutter) / n, gap = gapFor(base);
+      var rows = [], totalH = 0;
+      for (var r = 0; r < tbl.rows.length; r++) {
+        var raw = tbl.rows[r], cells = [], maxLines = 1;
+        for (var c = 0; c < n; c++) {
+          var words = runsToWords(parseInline(raw[c] != null ? raw[c] : ''));
+          var wrapped = wrapWords(words, base, 'body', function (){ return colW; });
+          cells.push(wrapped);
+          if (wrapped.length > maxLines) maxLines = wrapped.length;
+        }
+        var rowH = maxLines * (base + gap);
+        rows.push({ cells: cells, height: rowH });
+        totalH += rowH;
+      }
+      return { cols: n, colW: colW, gutter: gutter, rows: rows, height: totalH };
+    }
+
     function buildRenderLines(base) {
       var result = [];
       var dropRemaining = 0, dropWidth = 0, dropPending = null; // carried across paragraphs
@@ -284,6 +329,11 @@
         var para = paras[i], kind = para.type;
         if (kind === 'blank') { result.push({kind:kind, sz:base*0.5, frags:[{t:'',key:'body'}], indent:0, drop:null}); continue; }
         if (kind === 'ornament') { result.push({kind:kind, sz:base*1.7, frags:[{t:'',key:'body'}], indent:0, drop:null}); continue; }
+        if (kind === 'table') {
+          var tl = layoutTable(para, base);
+          result.push({kind:'table', sz: tl.height, frags:[{t:'',key:'body'}], indent:0, drop:null, table: tl});
+          dropRemaining = 0; dropPending = null; continue;
+        }
         var sz = sizeForKind(kind, para.level || 0, base);
         var words = runsToWords(parseInline(para.text));
         var bulletIndent = kind === 'bullet' ? base*0.8 : 0;
@@ -358,6 +408,34 @@
         color: rgb(RUBRIC[0],RUBRIC[1],RUBRIC[2]) });
     }
 
+    function drawFrags(frags, xStart, yBaseline, size) {
+      var x = xStart;
+      for (var fi = 0; fi < frags.length; fi++) {
+        var f = frags[fi];
+        if (f.mark === 'cross') { drawCross(x, yBaseline, size); x += crossW(size); continue; }
+        if (f.t) {
+          var p = abs(x, yBaseline);
+          var col = f.color === 'rubric' ? rgb(RUBRIC[0],RUBRIC[1],RUBRIC[2]) : rgb(0,0,0);
+          page.drawText(f.t, { x:p.x, y:p.y, size:size, font:fonts[f.key], color:col, rotate:degrees(rotation) });
+          x += fw(f.t, f.key, size);
+        }
+      }
+    }
+
+    function drawTable(layout, topY, base) {
+      var gap = gapFor(base), y = topY;
+      for (var r = 0; r < layout.rows.length; r++) {
+        var rowObj = layout.rows[r];
+        for (var c = 0; c < layout.cols; c++) {
+          var cellLines = rowObj.cells[c] || [];
+          var x = x_left + c * (layout.colW + layout.gutter);
+          var yy = y;
+          for (var k = 0; k < cellLines.length; k++) { yy -= base; drawFrags(cellLines[k], x, yy, base); yy -= gap; }
+        }
+        y -= rowObj.height;
+      }
+    }
+
     var y = draw_h / 2, x_left = -draw_w / 2;
     for (var li = 0; li < renderLines.length; li++) {
       var L = renderLines[li];
@@ -365,6 +443,7 @@
       if (y < -draw_h / 2) break;
 
       if (L.kind === 'ornament') { drawOrnament(y + L.sz * 0.5, chosen); y -= line_gap; continue; }
+      if (L.kind === 'table') { drawTable(L.table, y + L.sz, chosen); y -= line_gap; continue; }
 
       // decorative initial (positioned from the measured glyph box)
       if (L.drop) {
@@ -373,17 +452,7 @@
           color: rgb(RUBRIC[0],RUBRIC[1],RUBRIC[2]), rotate: degrees(rotation) });
       }
 
-      var x = x_left + L.indent;
-      for (var fi = 0; fi < L.frags.length; fi++) {
-        var f = L.frags[fi];
-        if (f.mark === 'cross') { drawCross(x, y, L.sz); x += crossW(L.sz); continue; }
-        if (f.t) {
-          var p = abs(x, y);
-          var col = f.color === 'rubric' ? rgb(RUBRIC[0],RUBRIC[1],RUBRIC[2]) : rgb(0,0,0);
-          page.drawText(f.t, { x:p.x, y:p.y, size:L.sz, font:fonts[f.key], color:col, rotate:degrees(rotation) });
-          x += fw(f.t, f.key, L.sz);
-        }
-      }
+      drawFrags(L.frags, x_left + L.indent, y, L.sz);
       y -= line_gap;
     }
   }
