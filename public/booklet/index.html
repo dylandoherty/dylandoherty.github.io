@@ -163,16 +163,11 @@
   ];
   var RUBRIC = [0.55, 0.13, 0.14];   // ink-red, like a printed rubric
   var DROP_LINES = 2;
-  // a vertically-symmetric printer's flourish, centred at (0,0), half-width 100
+  // a restrained, left-anchored flourish: a small lozenge at the left with a
+  // hairline that tapers away to the right. Spans 200 units (-100..100).
   var ORNAMENT = [
-    'M 0 -11 L 15 0 L 0 11 L -15 0 Z',
-    'M 0 -17 Q 4.5 0 0 17 Q -4.5 0 0 -17 Z',
-    'M 26 0 Q 60 -2.2 92 0 Q 60 2.2 26 0 Z',
-    'M -26 0 Q -60 -2.2 -92 0 Q -60 2.2 -26 0 Z',
-    'M 92 0 Q 99 -7 104 -3 Q 100 -1 99 0 Q 100 1 104 3 Q 99 7 92 0 Z',
-    'M -92 0 Q -99 -7 -104 -3 Q -100 -1 -99 0 Q -100 1 -104 3 Q -99 7 -92 0 Z',
-    'M 20 -2.4 L 22.4 0 L 20 2.4 L 17.6 0 Z',
-    'M -20 -2.4 L -22.4 0 L -20 2.4 L -17.6 0 Z'
+    'M -100 0 L -94 -3 L -88 0 L -94 3 Z',
+    'M -88 -1.7 Q 0 -0.85 100 -0.15 Q 0 0.85 -88 1.7 Z'
   ].join(' ');
 
   function splitRow(line){
@@ -401,9 +396,9 @@
     }
 
     function drawOrnament(ly, size) {
-      var targetWidth = Math.min(draw_w * 0.62, size * 26);
+      var targetWidth = Math.min(draw_w * 0.5, size * 22);
       var scale = targetWidth / 200; // path spans 200 units across
-      var c = abs(0, ly);
+      var c = abs(x_left + targetWidth / 2, ly); // left-aligned with the text column
       page.drawSvgPath(ORNAMENT, { x:c.x, y:c.y, scale:scale, rotate:degrees(rotation),
         color: rgb(RUBRIC[0],RUBRIC[1],RUBRIC[2]) });
     }
