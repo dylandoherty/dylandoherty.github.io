@@ -93,6 +93,11 @@
     </div>
     <input id="file" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
 
+    <label class="orientopt" style="display:block; margin:.7rem 0 0; font-size:.95rem; cursor:pointer;">
+      <input type="checkbox" id="openup" style="vertical-align:middle; margin-right:.45rem;">
+      Opens upward &mdash; landscape pages that flip up instead of turning sideways (roomier lines, larger type for short pages)
+    </label>
+
     <p id="status" class="status" role="status" aria-live="polite">Preparing the type&hellip;</p>
 
     <section id="result" class="result" aria-live="polite">
@@ -130,6 +135,7 @@
         <li><b>Cut</b> the centre crease only, between the two middle rows.</li>
         <li>Refold and press the ends together to form the booklet.</li>
       </ol>
+      <p class="syntax" style="margin-top:.6rem"><b>Opens upward:</b> fold exactly the same way &mdash; the pages are simply typeset turned 90&deg;, so you hold the finished booklet sideways and the leaves flip up instead of turning like a book. Good for short pages set in large type.</p>
       <p class="syntax" style="margin-top:.6rem">More than 8 sections makes extra sheets, each its own booklet. Print them one-per-page on separate sheets, or print two pages double-sided to get a booklet on each side of one sheet.</p>
     </details>
 
@@ -269,10 +275,20 @@
     var rgb = lib.rgb, degrees = lib.degrees;
     var panel_x = col * PANEL_W, panel_y = SHEET_H - (row + 1) * PANEL_H;
     var cx = panel_x + PANEL_W / 2, cy = panel_y + PANEL_H / 2;
-    var draw_w = PANEL_H - 2 * MARGIN, draw_h = PANEL_W - 2 * MARGIN;
+    // Normal pages read in portrait (lines run along the panel's short side); the
+    // "opens upward" option reads in landscape (lines run along the long side),
+    // giving wider lines so short pages can grow to a larger size.
+    var draw_w, draw_h;
+    if (opts.landscape) { draw_w = PANEL_W - 2 * MARGIN; draw_h = PANEL_H - 2 * MARGIN; }
+    else                { draw_w = PANEL_H - 2 * MARGIN; draw_h = PANEL_W - 2 * MARGIN; }
 
-    var MIN_FONT = 4, MAX_FONT = Math.min(draw_w, draw_h) * 0.10;
-    MAX_FONT = Math.max(6, Math.min(MAX_FONT, 11));
+    // Portrait caps type modestly (a full page of prose). "Opens upward" is meant
+    // for one or two lines to memorise, so it lets type grow until it fills the
+    // page height; the fit search below still shrinks busier pages to fit.
+    var MIN_FONT = 4, MAX_FONT;
+    if (opts.landscape) { MAX_FONT = Math.min(draw_h * 0.34, 54); }
+    else { MAX_FONT = Math.min(Math.min(draw_w, draw_h) * 0.10, 11); }
+    MAX_FONT = Math.max(6, MAX_FONT);
 
     function gapFor(s){ return s * 0.35; }
     function sizeForKind(kind, level, base){ return kind === 'heading' ? base + Math.max(0,(4-level))*2 : base; }
@@ -469,7 +485,9 @@
     for (var r = 1; r < 4; r++){ var yy=r*PANEL_H; page.drawLine(Object.assign({ start:{x:0,y:yy}, end:{x:SHEET_W,y:yy} }, opts)); }
   }
 
-  async function makeBookletPdf(PDFLib, fontkit, fontBytes, markdownText) {
+  async function makeBookletPdf(PDFLib, fontkit, fontBytes, markdownText, docOpts) {
+    docOpts = docOpts || {};
+    var landscape = !!docOpts.landscape;   // "opens upward": text turned a further 90° left
     var doc = await PDFLib.PDFDocument.create();
     doc.registerFontkit(fontkit);
     var fonts = {
@@ -504,29 +522,50 @@
       var delim = parts[pi + 1];
       if (delim && delim.charAt(0) === '=') spreadStart[sections.length - 1] = true;
     }
+    var allParsed = sections.map(function (p){ return parseMarkdown(p.trim()); });
+
+    // "Opens upward" is for memorising, so the WHOLE booklet uses one type size:
+    // the largest that still lets every page fit. This keeps the type from jumping
+    // between pages that happen to hold a word or two more or less. (Portrait keeps
+    // per-page sizing, with two-page spreads sharing a size within each pair.)
+    var uniformSize = 0;
+    if (landscape) {
+      uniformSize = Infinity;
+      for (var gi = 0; gi < allParsed.length; gi++) {
+        if (!allParsed[gi] || allParsed[gi].length === 0) continue;
+        var ps = drawPanel(null, fonts, allParsed[gi], 0,0,0, PDFLib, initMetrics, {measureOnly:true, landscape:true});
+        if (ps > 0 && ps < uniformSize) uniformSize = ps;
+      }
+      if (!isFinite(uniformSize)) uniformSize = 0;
+    }
+
     // group sections into sheets of 8 panels each; >8 sections => extra sheets
     var sheets = Math.max(1, Math.ceil(sections.length / 8));
     for (var s = 0; s < sheets; s++) {
-      var slice = sections.slice(s * 8, s * 8 + 8);
-      while (slice.length < 8) slice.push('');
-      var parsedPages = slice.map(function (p){ return parseMarkdown(p.trim()); });
+      var parsedPages = allParsed.slice(s * 8, s * 8 + 8);
+      while (parsedPages.length < 8) parsedPages.push([]);
       var page = doc.addPage([SHEET_W, SHEET_H]);
       drawGuides(page, PDFLib);
-      // Pre-compute shared font sizes for two-page spreads. Only facing pairs are
-      // honoured: local pages (2,3), (4,5), (6,7) — i.e. slot indices 1, 3, 5 —
-      // sit side by side when the sheet is folded; other pairs would straddle a
-      // fold or a cover, so they fall back to independent sizing.
+      // Portrait only: pre-compute shared font sizes for two-page spreads. Only
+      // facing pairs are honoured — local pages (2,3), (4,5), (6,7), i.e. slot
+      // indices 1, 3, 5 — since other pairs would straddle a fold or a cover.
       var forced = [0,0,0,0,0,0,0,0];
-      for (var L = 1; L <= 5; L += 2) {
-        if (!spreadStart[s * 8 + L]) continue;
-        var szA = drawPanel(page, fonts, parsedPages[L],     0,0,0, PDFLib, initMetrics, {measureOnly:true});
-        var szB = drawPanel(page, fonts, parsedPages[L + 1], 0,0,0, PDFLib, initMetrics, {measureOnly:true});
-        var shared = Math.min(szA, szB);
-        if (shared > 0) { forced[L] = shared; forced[L + 1] = shared; }
+      if (!landscape) {
+        for (var L = 1; L <= 5; L += 2) {
+          if (!spreadStart[s * 8 + L]) continue;
+          var szA = drawPanel(page, fonts, parsedPages[L],     0,0,0, PDFLib, initMetrics, {measureOnly:true});
+          var szB = drawPanel(page, fonts, parsedPages[L + 1], 0,0,0, PDFLib, initMetrics, {measureOnly:true});
+          var shared = Math.min(szA, szB);
+          if (shared > 0) { forced[L] = shared; forced[L + 1] = shared; }
+        }
       }
       for (var i = 0; i < LAYOUT.length; i++) {
         var pn=LAYOUT[i][0],row=LAYOUT[i][1],col=LAYOUT[i][2],rot=LAYOUT[i][3];
-        drawPanel(page, fonts, parsedPages[pn-1], row, col, rot, PDFLib, initMetrics, {forcedSize:forced[pn-1]});
+        // "opens upward" turns the whole booklet a further 90° left: every panel
+        // gets -90° so pages read in landscape and flip up instead of sideways.
+        if (landscape) rot -= 90;
+        var panelSize = landscape ? uniformSize : forced[pn-1];
+        drawPanel(page, fonts, parsedPages[pn-1], row, col, rot, PDFLib, initMetrics, {forcedSize:panelSize, landscape:landscape});
       }
     }
     return await doc.save();
@@ -548,7 +587,8 @@
   var statusEl=document.getElementById('status'), result=document.getElementById('result');
   var preview=document.getElementById('preview'), download=document.getElementById('download');
   var outname=document.getElementById('outname'), resetBtn=document.getElementById('reset');
-  var FONT_BYTES=null, currentUrl=null;
+  var openup=document.getElementById('openup');
+  var FONT_BYTES=null, currentUrl=null, LAST_TEXT=null, LAST_NAME=null;
 
   function setStatus(msg,isErr){ statusEl.textContent=msg||''; statusEl.className='status'+(isErr?' err':''); }
   function revoke(){ if(currentUrl){ URL.revokeObjectURL(currentUrl); currentUrl=null; } }
@@ -570,19 +610,14 @@
     setStatus('Couldn\u2019t load the fonts ('+e.message+'). Make sure the fonts/ folder sits next to this page and that it\u2019s served over http (e.g. hugo server), not opened as a file.', true);
   });
 
-  async function handleFile(file){
-    if(!file || !FONT_BYTES) return;
-    if(!/\.(md|markdown|txt)$/i.test(file.name) && file.type && !/text|markdown/.test(file.type)){
-      setStatus('Please choose a .md, .markdown, or .txt file.', true); return;
-    }
+  async function build(text, name){
+    if(text==null || !FONT_BYTES) return;
     setStatus('Setting the type\u2026');
-    var text;
-    try { text=await file.text(); } catch(e){ setStatus('Could not read that file.', true); return; }
     try {
-      var bytes=await window.BookletCore.makeBookletPdf(window.PDFLib, window.fontkit, FONT_BYTES, text);
+      var bytes=await window.BookletCore.makeBookletPdf(window.PDFLib, window.fontkit, FONT_BYTES, text, { landscape: openup.checked });
       revoke();
       currentUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-      var pdfName=outNameFor(file.name);
+      var pdfName=outNameFor(name);
       preview.src=currentUrl; download.href=currentUrl; download.setAttribute('download',pdfName);
       outname.innerHTML=pdfName+' <small>&mdash; ready to print</small>';
       result.classList.add('show'); setStatus('');
@@ -592,6 +627,21 @@
     }
   }
 
+  async function handleFile(file){
+    if(!file || !FONT_BYTES) return;
+    if(!/\.(md|markdown|txt)$/i.test(file.name) && file.type && !/text|markdown/.test(file.type)){
+      setStatus('Please choose a .md, .markdown, or .txt file.', true); return;
+    }
+    setStatus('Setting the type\u2026');
+    var text;
+    try { text=await file.text(); } catch(e){ setStatus('Could not read that file.', true); return; }
+    LAST_TEXT=text; LAST_NAME=file.name;
+    await build(text, file.name);
+  }
+
+  // re-render the current file when the orientation toggle changes
+  openup.addEventListener('change', function(){ if(LAST_TEXT!=null) build(LAST_TEXT, LAST_NAME); });
+
   drop.addEventListener('click', function(){ if(FONT_BYTES) fileInput.click(); });
   drop.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); if(FONT_BYTES) fileInput.click(); } });
   fileInput.addEventListener('change', function(){ if(fileInput.files&&fileInput.files[0]) handleFile(fileInput.files[0]); fileInput.value=''; });
@@ -600,7 +650,7 @@
   drop.addEventListener('drop', function(e){ var dt=e.dataTransfer; if(dt&&dt.files&&dt.files[0]) handleFile(dt.files[0]); });
   window.addEventListener('dragover', function(e){ e.preventDefault(); });
   window.addEventListener('drop', function(e){ e.preventDefault(); });
-  resetBtn.addEventListener('click', function(){ result.classList.remove('show'); preview.src='about:blank'; revoke(); setStatus(''); drop.focus(); });
+  resetBtn.addEventListener('click', function(){ result.classList.remove('show'); preview.src='about:blank'; revoke(); setStatus(''); LAST_TEXT=null; LAST_NAME=null; drop.focus(); });
 })();
 </script>
 </body>
